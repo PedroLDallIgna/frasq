@@ -4,13 +4,27 @@ from config import settings
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.spec import Basic, BasicProperties
 
-from rabbitmq_client import RabbitMQClient
+from rabbitmq_app import RabbitMQApp
 
-def callback(
+app = RabbitMQApp(
+    username=settings.user,
+    password=settings.password,
+    host=settings.host,
+    port=settings.port,
+    vhost=settings.vhost
+)
+    
+@app.subscriber(
+    exchange_name=settings.exchange_name,
+    queue_name=settings.queue_name,
+    routing_key=settings.routing_key,
+    auto_ack=False
+)
+def handle_message(
     ch: BlockingChannel,
     method: Basic.Deliver,
     properties: BasicProperties,
-    body: bytes,
+    body: bytes
 ) -> None:
     """Callback function always called when a message arrives.
 
@@ -30,27 +44,16 @@ def callback(
         print(f'\t[!] Error processing message: {e}')
         ch.basic_nack(delivery_tag=delivery_tag, requeue=True)
 
-def main() -> None:
-    client = RabbitMQClient()
-    
+def main() -> None:    
     try:
-        client.connect()
-        client.consume(
-            callback_function=callback,
-            exchange_name=settings.exchange_name,
-            exchange_type=settings.exchange_type,
-            queue_name=settings.queue_name,
-            routing_key=settings.routing_key,
-            auto_ack=False
-        )
+        app.run()
     except KeyboardInterrupt:
         print('\n\t[*] Exiting...')
     except Exception as e:
         print(f'\t[!] Error occurred: {e}')
     finally:
-        client.close()
+        app.close()
         sys.exit(0) 
-    
     
 if __name__ == '__main__':
     main()

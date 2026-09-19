@@ -1,24 +1,38 @@
-from rabbitmq_client import RabbitMQClient
 from config import settings
 
+from rabbitmq_app import RabbitMQApp
+
+app = RabbitMQApp(
+    username=settings.user,
+    password=settings.password,
+    host=settings.host,
+    port=settings.port,
+    vhost=settings.vhost
+)
+
+@app.publisher(
+    exchange_name=settings.exchange_name,
+    routing_key=settings.routing_key,
+    max_retries=settings.max_retries,
+    retry_delay=settings.retry_delay
+)
+def send_message() -> str:
+    """Function to send a message to the specified exchange and routing key.
+
+    Returns:
+        str: The message to be sent.
+    """
+    return 'Hello! This is a message from the producer'
+
 def main() -> None:
-    client = RabbitMQClient()
-    
     try:
-        message: str = 'Hello! This is a message from the producer'
-        client.connect()
-        client.publish(
-            message=message,
-            exchange_name=settings.exchange_name,
-            exchange_type=settings.exchange_type,
-            queue_name=settings.queue_name,
-            routing_key=settings.routing_key
-        )
+        send_message()
+    except KeyboardInterrupt:
+        print('\n\t[*] Exiting...')
     except Exception as e:
         print(f'\t[!] Error occurred: {e}')
     finally:
-        client.close()
-
+        app.close()
 
 if __name__ == '__main__':
     main()
