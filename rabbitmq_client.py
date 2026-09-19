@@ -105,6 +105,7 @@ class RabbitMQClient:
         self,
         callback_function: Callable[[BlockingChannel, Basic.Deliver, BasicProperties, bytes], None],
         queue_name: str,
+        auto_ack: bool = False
     ) -> None:
         """Starts consuming messages from the specified queue using the provided callback function."""
         while True:
@@ -115,7 +116,7 @@ class RabbitMQClient:
                 self._channel.basic_consume(
                     queue=queue_name,
                     on_message_callback=callback_function,
-                    auto_ack=True,
+                    auto_ack=auto_ack,
                 )
                 print(f'\t[*] Waiting for messages from \'{queue_name}\'. To exit press CTRL+C')
                 self._channel.start_consuming()

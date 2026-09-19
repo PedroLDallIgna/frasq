@@ -1,4 +1,3 @@
-import pika
 import sys
 from config import settings
 
@@ -23,16 +22,26 @@ def callback(
         properties (BasicProperties): Properties of the message.
         body (bytes): Message content in bytes format.
     """
-    decoded_message: str = body.decode('utf-8')
-    print(f'\t[X] Message received: {decoded_message}')
+    delivery_tag: int = method.delivery_tag
     
+    try:
+        decoded_message: str = body.decode('utf-8')
+        print(f'\t[X] Message received: {decoded_message}')
+        ch.basic_ack(delivery_tag=delivery_tag)
+    except Exception as e:
+        print(f'\t[!] Error processing message: {e}')
+        ch.basic_nack(delivery_tag=delivery_tag, requeue=True)
 
 def main() -> None:
     client = RabbitMQClient()
     
     try:
         client.connect()
-        client.consume(callback_function=callback, queue_name=settings.queue_name)
+        client.consume(
+            callback_function=callback,
+            queue_name=settings.queue_name,
+            auto_ack=False
+        )
     except KeyboardInterrupt:
         print('\n\t[*] Exiting...')
     except Exception as e:
