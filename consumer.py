@@ -7,6 +7,8 @@ from pika.spec import Basic, BasicProperties
 from pika.connection import ConnectionParameters
 from pika.credentials import PlainCredentials
 
+from rabbitmq_client import RabbitMQClient
+
 def callback(
     ch: BlockingChannel,
     method: Basic.Deliver,
@@ -26,36 +28,19 @@ def callback(
     
 
 def main() -> None:
-    credentials: PlainCredentials = pika.PlainCredentials(
-        username=settings.user,
-        password=settings.password,
-    )
+    client = RabbitMQClient()
     
-    connection_parameters: ConnectionParameters = pika.ConnectionParameters(
-        host=settings.host,
-        port=settings.port,
-        virtual_host=settings.vhost,
-        credentials=credentials,
-    )
-    connection: BlockingConnection = pika.BlockingConnection(connection_parameters)
-    channel: BlockingChannel = connection.channel()
-
-    channel.queue_declare(queue=settings.queue_name)
-
-    channel.basic_consume(
-        queue=settings.queue_name,
-        on_message_callback=callback,
-        auto_ack=True,
-    )
-    
-    print('\t[*] Waiting for messages. To exit press CTRL+C')
-    
-    channel.start_consuming()
+    try:
+        client.connect()
+        client.consume(callback_function=callback, queue_name=settings.queue_name)
+    except KeyboardInterrupt:
+        print('\n\t[*] Exiting...')
+    except Exception as e:
+        print(f'\t[!] Error occurred: {e}')
+    finally:
+        client.close()
+        sys.exit(0) 
     
     
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        print('\n\t[*] Exiting...')
-        sys.exit(0)
+    main()
