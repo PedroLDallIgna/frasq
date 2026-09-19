@@ -1,13 +1,11 @@
 import pika
 import sys
+from config import settings
 
 from pika.adapters.blocking_connection import BlockingChannel, BlockingConnection
 from pika.spec import Basic, BasicProperties
-
-QUEUE_NAME: str = 'tasks_queue'
-RABBITMQ_HOST: str = 'localhost'
-RABBITMQ_PORT: int = 5672
-RABBITMQ_VHOST: str = 'my_vhost'
+from pika.connection import ConnectionParameters
+from pika.credentials import PlainCredentials
 
 def callback(
     ch: BlockingChannel,
@@ -28,19 +26,24 @@ def callback(
     
 
 def main() -> None:
-    connection: BlockingConnection = pika.BlockingConnection(
-        pika.ConnectionParameters(
-            host=RABBITMQ_HOST,
-            port=RABBITMQ_PORT,
-            virtual_host=RABBITMQ_VHOST
-        )
+    credentials: PlainCredentials = pika.PlainCredentials(
+        username=settings.user,
+        password=settings.password,
     )
+    
+    connection_parameters: ConnectionParameters = pika.ConnectionParameters(
+        host=settings.host,
+        port=settings.port,
+        virtual_host=settings.vhost,
+        credentials=credentials,
+    )
+    connection: BlockingConnection = pika.BlockingConnection(connection_parameters)
     channel: BlockingChannel = connection.channel()
 
-    channel.queue_declare(queue=QUEUE_NAME)
+    channel.queue_declare(queue=settings.queue_name)
 
     channel.basic_consume(
-        queue=QUEUE_NAME,
+        queue=settings.queue_name,
         on_message_callback=callback,
         auto_ack=True,
     )

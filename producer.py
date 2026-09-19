@@ -1,28 +1,32 @@
 import pika
-from pika.adapters.blocking_connection import BlockingChannel, BlockingConnection
 
-QUEUE_NAME: str = 'tasks_queue'
-RABBITMQ_HOST: str = 'localhost'
-RABBITMQ_PORT: int = 5672
-RABBITMQ_VHOST: str = 'my_vhost'
+from pika.adapters.blocking_connection import BlockingChannel, BlockingConnection
+from pika.connection import ConnectionParameters
+from pika.credentials import PlainCredentials
+from config import settings
 
 def main() -> None:
-    connection: BlockingConnection = pika.BlockingConnection(
-        pika.ConnectionParameters(
-            host=RABBITMQ_HOST,
-            port=RABBITMQ_PORT,
-            virtual_host=RABBITMQ_VHOST
-        )
+    credentials: PlainCredentials = pika.PlainCredentials(
+        username=settings.user,
+        password=settings.password,
     )
+    
+    connection_parameters: ConnectionParameters = pika.ConnectionParameters(
+        host=settings.host,
+        port=settings.port,
+        virtual_host=settings.vhost,
+        credentials=credentials,
+    )
+    connection: BlockingConnection = pika.BlockingConnection(connection_parameters)
     channel: BlockingChannel = connection.channel()
 
-    channel.queue_declare(queue=QUEUE_NAME)
+    channel.queue_declare(queue=settings.queue_name)
 
     message: str = 'Hello! This is a message from the producer'
 
     channel.basic_publish(
         exchange='',
-        routing_key=QUEUE_NAME,
+        routing_key=settings.queue_name,
         body=message,
     )
 
