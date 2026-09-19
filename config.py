@@ -12,6 +12,9 @@ class RabbitMQSettings(NamedTuple):
     password: str
     vhost: str
     queue_name: str
+    exchange_name: str
+    exchange_type: str
+    routing_key: str
     max_retries: int
     retry_delay: int
     
@@ -22,6 +25,9 @@ settings = RabbitMQSettings(
     password=os.getenv('RABBITMQ_PASSWORD', 'guest'),
     vhost=os.getenv('RABBITMQ_VHOST', '/'),
     queue_name=os.getenv('RABBITMQ_QUEUE_NAME', 'tasks_queue'),
+    exchange_name=os.getenv('RABBITMQ_EXCHANGE_NAME', 'tasks_exchange'),
+    exchange_type=os.getenv('RABBITMQ_EXCHANGE_TYPE', 'direct'),
+    routing_key=os.getenv('RABBITMQ_ROUTING_KEY', 'task_routing_key'),
     max_retries=int(os.getenv('RABBITMQ_MAX_RETRIES', 5)),
     retry_delay=int(os.getenv('RABBITMQ_RETRY_DELAY', 3))
 )

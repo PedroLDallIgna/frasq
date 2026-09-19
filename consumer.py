@@ -1,10 +1,8 @@
 import sys
 from config import settings
 
-from pika.adapters.blocking_connection import BlockingChannel, BlockingConnection
+from pika.adapters.blocking_connection import BlockingChannel
 from pika.spec import Basic, BasicProperties
-from pika.connection import ConnectionParameters
-from pika.credentials import PlainCredentials
 
 from rabbitmq_client import RabbitMQClient
 
@@ -26,7 +24,7 @@ def callback(
     
     try:
         decoded_message: str = body.decode('utf-8')
-        print(f'\t[X] Message received: {decoded_message}')
+        print(f'\t[X] Message [{delivery_tag}] received via \'{method.exchange}\' [RK: \'{method.routing_key}\']: {decoded_message}')
         ch.basic_ack(delivery_tag=delivery_tag)
     except Exception as e:
         print(f'\t[!] Error processing message: {e}')
@@ -39,7 +37,10 @@ def main() -> None:
         client.connect()
         client.consume(
             callback_function=callback,
+            exchange_name=settings.exchange_name,
+            exchange_type=settings.exchange_type,
             queue_name=settings.queue_name,
+            routing_key=settings.routing_key,
             auto_ack=False
         )
     except KeyboardInterrupt:
