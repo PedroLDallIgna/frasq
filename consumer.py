@@ -25,7 +25,7 @@ def handle_message(
     method: Basic.Deliver,
     properties: BasicProperties,
     body: bytes
-) -> None:
+) -> bool | None:
     """Callback function always called when a message arrives.
 
     Args:
@@ -39,10 +39,10 @@ def handle_message(
     try:
         decoded_message: str = body.decode('utf-8')
         print(f'\t[X] Message [{delivery_tag}] received via \'{method.exchange}\' [RK: \'{method.routing_key}\']: {decoded_message}')
-        ch.basic_ack(delivery_tag=delivery_tag)
+        return True
     except Exception as e:
         print(f'\t[!] Error processing message: {e}')
-        ch.basic_nack(delivery_tag=delivery_tag, requeue=True)
+        return False
 
 def main() -> None:    
     try:

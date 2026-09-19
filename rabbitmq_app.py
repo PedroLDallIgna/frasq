@@ -12,7 +12,7 @@ from pika.exceptions import AMQPConnectionError, StreamLostError
 from pika.spec import Basic, BasicProperties
 
 F = TypeVar('F', bound=Callable[..., Any])
-MessageHandler = Callable[[BlockingChannel, Basic.Deliver, BasicProperties, bytes], None]
+MessageHandler = Callable[[BlockingChannel, Basic.Deliver, BasicProperties, bytes], bool | None]
 
 class RabbitMQApp:
     """
@@ -113,8 +113,14 @@ class RabbitMQApp:
                 properties: BasicProperties,
                 body: bytes
             ) -> None:
-                return func(ch, method, properties, body)
-            
+                result = func(ch, method, properties, body)
+                
+                if not auto_ack:
+                    if result:
+                        ch.basic_ack(delivery_tag=method.delivery_tag)
+                    else:
+                        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+                        
             return wrapper
             
         return decorator
