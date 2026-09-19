@@ -2,10 +2,17 @@ import pika
 from pika.adapters.blocking_connection import BlockingChannel, BlockingConnection
 
 QUEUE_NAME: str = 'tasks_queue'
+RABBITMQ_HOST: str = 'localhost'
+RABBITMQ_PORT: int = 5672
+RABBITMQ_VHOST: str = 'my_vhost'
 
 def main() -> None:
     connection: BlockingConnection = pika.BlockingConnection(
-        pika.ConnectionParameters('localhost')
+        pika.ConnectionParameters(
+            host=RABBITMQ_HOST,
+            port=RABBITMQ_PORT,
+            virtual_host=RABBITMQ_VHOST
+        )
     )
     channel: BlockingChannel = connection.channel()
 
