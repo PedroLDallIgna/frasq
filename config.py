@@ -12,6 +12,8 @@ class RabbitMQSettings(NamedTuple):
     password: str
     vhost: str
     queue_name: str
+    max_retries: int
+    retry_delay: int
     
 settings = RabbitMQSettings(
     host=os.getenv('RABBITMQ_HOST', 'localhost'),
@@ -20,4 +22,6 @@ settings = RabbitMQSettings(
     password=os.getenv('RABBITMQ_PASSWORD', 'guest'),
     vhost=os.getenv('RABBITMQ_VHOST', '/'),
     queue_name=os.getenv('RABBITMQ_QUEUE_NAME', 'tasks_queue'),
+    max_retries=int(os.getenv('RABBITMQ_MAX_RETRIES', 5)),
+    retry_delay=int(os.getenv('RABBITMQ_RETRY_DELAY', 3))
 )
