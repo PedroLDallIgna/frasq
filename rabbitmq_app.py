@@ -83,6 +83,7 @@ class RabbitMQApp:
         
     def subscriber(
         self,
+        *,
         queue_name: str,
         exchange_name: str,
         routing_key: str,
@@ -150,15 +151,13 @@ class RabbitMQApp:
             exchange=exchange_name,
             routing_key=routing_key,
             body=message,
-            properties=pika.BasicProperties(
-                delivery_mode=2
-            )
         )
         print(f'\t[X] Message sent to \'{exchange_name}\' exchange: \'{message}\'')
         self.close()
         
     def publisher(
         self,
+        *,
         exchange_name: str,
         routing_key: str,
         max_retries: int = 5,
