@@ -24,9 +24,19 @@ def send_message() -> str:
     """
     return 'Hello! This is a message from the producer'
 
+@app.publisher(
+    exchange_name="new_exchange",
+    routing_key="new_routing_key",
+    max_retries=settings.max_retries,
+    retry_delay=settings.retry_delay
+)
+def send_other_message() -> str:
+    return 'Hello! This is a message from the producer to a different exchange and routing key'
+
 def main() -> None:
     try:
         send_message()
+        send_other_message()
     except KeyboardInterrupt:
         print('\n\t[*] Exiting...')
     except Exception as e:

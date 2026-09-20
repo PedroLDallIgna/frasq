@@ -43,6 +43,28 @@ def handle_message(
     except Exception as e:
         print(f'\t[!] Error processing message: {e}')
         return False
+    
+@app.subscriber(
+    exchange_name="new_exchange",
+    queue_name="new_queue",
+    routing_key="new_routing_key",
+    auto_ack=False
+)
+def handle_other_message(
+    ch: BlockingChannel,
+    method: Basic.Deliver,
+    properties: BasicProperties,
+    body: bytes
+) -> bool | None:
+    delivery_tag: int = method.delivery_tag
+    
+    try:
+        decoded_message: str = body.decode('utf-8')
+        print(f'\t[X] Message [{delivery_tag}] received via \'{method.exchange}\' [RK: \'{method.routing_key}\']: {decoded_message}')
+        return True
+    except Exception as e:
+        print(f'\t[!] Error processing message: {e}')
+        return False
 
 def main() -> None:    
     try:
