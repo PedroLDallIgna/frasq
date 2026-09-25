@@ -1,0 +1,4 @@
+# Editable Git install with no remote (frasq==0.1.0)
+-e /home/pedro/Projects/python/frasq
+pika==1.4.4
+python-dotenv==1.2.3

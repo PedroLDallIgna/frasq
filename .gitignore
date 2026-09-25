@@ -1,3 +1,18 @@
+# Ambientes Virtuais
+venv/
+.venv/
+env/
+
+# Variáveis de Ambiente e Segredos (NUNCA ENVIAR PARA O GITHUB)
 .env
 
+# Ficheiros Temporários do Python e Caches
 __pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Ficheiros de Construção do Pacote (Builds)
+build/
+dist/
+*.egg-info/

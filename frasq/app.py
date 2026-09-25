@@ -14,7 +14,7 @@ from pika.spec import Basic, BasicProperties
 F = TypeVar('F', bound=Callable[..., Any])
 MessageHandler = Callable[[BlockingChannel, Basic.Deliver, BasicProperties, bytes], bool | None]
 
-class RabbitMQApp:
+class FrasQApp:
     """
     A structure like Flask/FastAPI to manager publishers and consumers of RabbitMQ,
     making use of Python decorators.
@@ -145,7 +145,7 @@ class RabbitMQApp:
             retry_delay (float): The delay in seconds between retry attempts. Defaults to 3.0.
         """
         self._connect(max_retries=max_retries, retry_delay=retry_delay)
-        assert self._channel is not None  # For type checking
+        assert self._channel is not None
         
         self._channel.basic_publish(
             exchange=exchange_name,
@@ -257,5 +257,3 @@ class RabbitMQApp:
             self._connection.close()
             self._connection = None
             print('\t[i] Connection closed.')
-                
-    

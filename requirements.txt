@@ -1,2 +1,0 @@
-pika==1.4.4
-python-dotenv==1.2.3

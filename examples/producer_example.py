@@ -1,8 +1,8 @@
 from config import settings
 
-from rabbitmq_app import RabbitMQApp
+from frasq import FrasQApp
 
-app = RabbitMQApp(
+app = FrasQApp(
     username=settings.user,
     password=settings.password,
     host=settings.host,
