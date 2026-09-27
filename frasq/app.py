@@ -1,17 +1,21 @@
 import time
 import pika
 import functools
-import json
 
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Type, TypeVar
 
 from pika.credentials import PlainCredentials
 from pika.connection import ConnectionParameters
 from pika.adapters.blocking_connection import BlockingConnection, BlockingChannel
 from pika.exceptions import AMQPConnectionError, StreamLostError
 from pika.spec import Basic, BasicProperties
+from pika.delivery_mode import DeliveryMode
 
-F = TypeVar('F', bound=Callable[..., Any])
+from frasq.deserializers import deserialize_payload
+from frasq.serializers import serialize_payload
+
+T = TypeVar('T')
+F = TypeVar('F', bound=Callable[..., T])
 MessageHandler = Callable[[BlockingChannel, Basic.Deliver, BasicProperties, bytes], bool | None]
 
 class FrasQApp:
@@ -88,6 +92,7 @@ class FrasQApp:
         exchange_name: str,
         routing_key: str,
         auto_ack: bool = False,
+        schema: Type[T] | None = None,
     ) -> Callable[[MessageHandler], MessageHandler]:
         """
         Decorator to register a function as a subscriber to a specific queue and exchange.
@@ -97,16 +102,9 @@ class FrasQApp:
             exchange_name (str): The name of the exchange to bind the queue to.
             routing_key (str): The routing key for binding the queue to the exchange.
             auto_ack (bool): Whether to automatically acknowledge messages. Defaults to False.
+            schema (Type[T] | None): Optional schema for deserializing the message payload.
         """
         def decorator(func: MessageHandler) -> MessageHandler:
-            self._subscribers.append({
-                'func': func,
-                'queue_name': queue_name,
-                'exchange_name': exchange_name,
-                'routing_key': routing_key,
-                'auto_ack': auto_ack
-            })
-            
             @functools.wraps(func)
             def wrapper(
                 ch: BlockingChannel,
@@ -114,7 +112,8 @@ class FrasQApp:
                 properties: BasicProperties,
                 body: bytes
             ) -> None:
-                result = func(ch, method, properties, body)
+                payload = deserialize_payload(body, properties.content_type, schema)
+                result = func(ch, method, properties, payload)
                 
                 if not auto_ack:
                     if result:
@@ -122,6 +121,15 @@ class FrasQApp:
                     else:
                         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
                         
+            self._subscribers.append({
+                'func': wrapper,
+                'queue_name': queue_name,
+                'exchange_name': exchange_name,
+                'routing_key': routing_key,
+                'auto_ack': auto_ack,
+                'schema': schema
+            })
+            
             return wrapper
             
         return decorator
@@ -132,7 +140,9 @@ class FrasQApp:
         exchange_name: str,
         routing_key: str,
         max_retries: int = 5,
-        retry_delay: float = 3.0
+        retry_delay: float = 3.0,
+        delivery_mode: DeliveryMode = DeliveryMode.Transient,
+        content_type: str = 'text/plain'
     ) -> None:
         """
         Publishes a message to the specified exchange with the given routing key.
@@ -147,10 +157,16 @@ class FrasQApp:
         self._connect(max_retries=max_retries, retry_delay=retry_delay)
         assert self._channel is not None
         
+        properties = pika.BasicProperties(
+            delivery_mode=delivery_mode,
+            content_type=content_type
+        )
+        
         self._channel.basic_publish(
             exchange=exchange_name,
             routing_key=routing_key,
             body=message,
+            properties=properties
         )
         print(f'\t[X] Message sent to \'{exchange_name}\' exchange: \'{message}\'')
         self.close()
@@ -161,7 +177,8 @@ class FrasQApp:
         exchange_name: str,
         routing_key: str,
         max_retries: int = 5,
-        retry_delay: float = 3.0
+        retry_delay: float = 3.0,
+        delivery_mode: DeliveryMode = DeliveryMode.Transient
     ) -> Callable[[F], F]:
         """
         Decorator to register a function as a publisher to a specific exchange and routing key.
@@ -174,21 +191,20 @@ class FrasQApp:
         """
         def decorator(func: F) -> F:
             @functools.wraps(func)
-            def wrapper(*args: Any, **kwargs: Any) -> Any:
-                result = func(*args, **kwargs)
+            def wrapper(*args: Any, **kwargs: Any) -> T:
+                result: T = func(*args, **kwargs)
                 
                 if result is not None:
-                    if isinstance(result, (dict, list)):
-                        message_body = json.dumps(result)
-                    else:
-                        message_body = str(result)
+                    payload_bytes, content_type = serialize_payload(result)
                     
                     self._publish(
-                        message=message_body,
+                        message=payload_bytes,
                         exchange_name=exchange_name,
                         routing_key=routing_key,
+                        content_type=content_type,
                         max_retries=max_retries,
-                        retry_delay=retry_delay
+                        retry_delay=retry_delay,
+                        delivery_mode=delivery_mode
                     )
                 
                 return result
