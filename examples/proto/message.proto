@@ -1,0 +1,7 @@
+edition = "2023";
+
+package tutorial;
+
+message BasicMessage {
+    string message = 1;
+}

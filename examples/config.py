@@ -61,8 +61,20 @@ class Settings:
     def exchange_type(self) -> str:
         ...
         
-    @env_property('RABBITMQ_ROUTING_KEY', default='task_routing_key', env_type=str)
-    def routing_key(self) -> str:
+    @env_property('RABBITMQ_ROUTING_KEY_STRING', default='rk.string', env_type=str)
+    def routing_key_string(self) -> str:
+        ...
+        
+    @env_property('RABBITMQ_ROUTING_KEY_JSON', default='rk.json', env_type=str)
+    def routing_key_json(self) -> str:
+        ...
+        
+    @env_property('RABBITMQ_ROUTING_KEY_PYDANTIC', default='rk.pydantic', env_type=str)
+    def routing_key_pydantic(self) -> str:
+        ...
+        
+    @env_property('RABBITMQ_ROUTING_KEY_PROTOBUF', default='rk.protobuf', env_type=str)
+    def routing_key_protobuf(self) -> str:
         ...
         
     @env_property('RABBITMQ_MAX_RETRIES', default='5', env_type=int)

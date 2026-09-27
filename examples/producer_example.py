@@ -1,4 +1,7 @@
 from config import settings
+from gen.message_pb2 import BasicMessage
+from models.message import MessageModel
+from pika.delivery_mode import DeliveryMode
 
 from frasq import FrasQApp
 
@@ -12,11 +15,22 @@ app = FrasQApp(
 
 @app.publisher(
     exchange_name=settings.exchange_name,
-    routing_key=settings.routing_key,
+    routing_key=settings.routing_key_pydantic,
     max_retries=settings.max_retries,
-    retry_delay=settings.retry_delay
+    retry_delay=settings.retry_delay,
+    delivery_mode=DeliveryMode.Transient,
 )
-def send_message() -> str:
+def send_pydantic_message() -> MessageModel:
+    return MessageModel(message='Hello! This is a message from the producer')
+
+@app.publisher(
+    exchange_name=settings.exchange_name,
+    routing_key=settings.routing_key_string,
+    max_retries=settings.max_retries,
+    retry_delay=settings.retry_delay,
+    delivery_mode=DeliveryMode.Transient,
+)
+def send_string_message() -> str:
     """Function to send a message to the specified exchange and routing key.
 
     Returns:
@@ -25,18 +39,43 @@ def send_message() -> str:
     return 'Hello! This is a message from the producer'
 
 @app.publisher(
-    exchange_name="new_exchange",
-    routing_key="new_routing_key",
+    exchange_name=settings.exchange_name,
+    routing_key=settings.routing_key_json,
     max_retries=settings.max_retries,
-    retry_delay=settings.retry_delay
+    retry_delay=settings.retry_delay,
+    delivery_mode=DeliveryMode.Transient,
 )
-def send_other_message() -> str:
-    return 'Hello! This is a message from the producer to a different exchange and routing key'
+def send_json_message() -> dict:
+    """Function to send a JSON message to the specified exchange and routing key.
+
+    Returns:
+        dict: The JSON message to be sent.
+    """
+    return {'message': 'Hello! This is a JSON message from the producer'}
+
+@app.publisher(
+    exchange_name=settings.exchange_name,
+    routing_key=settings.routing_key_protobuf,
+    max_retries=settings.max_retries,
+    retry_delay=settings.retry_delay,
+    delivery_mode=DeliveryMode.Transient,
+)
+def send_protobuf_message() -> BasicMessage:
+    """Function to send a protobuf message to the specified exchange and routing key.
+
+    Returns:
+        BasicMessage: The protobuf message to be sent.
+    """
+    msg = BasicMessage()
+    msg.message = 'Hello! This is a Protobuf message from the producer'
+    return msg
 
 def main() -> None:
     try:
-        send_message()
-        send_other_message()
+        send_string_message()
+        send_pydantic_message()
+        send_json_message()
+        send_protobuf_message()
     except KeyboardInterrupt:
         print('\n\t[*] Exiting...')
     except Exception as e:

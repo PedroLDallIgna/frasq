@@ -1,4 +1,9 @@
-# Editable Git install with no remote (frasq==0.1.0)
--e /home/pedro/Projects/python/frasq
+annotated-types==0.8.0
+-e git+ssh://git@github.com/PedroLDallIgna/frasq.git@0fefdd90ca61689b664b0a910e45c60a13cda7b7#egg=frasq
 pika==1.4.4
+protobuf==7.36.2
+pydantic==2.13.5
+pydantic_core==2.46.5
 python-dotenv==1.2.3
+typing-inspection==0.4.4
+typing_extensions==4.16.0
